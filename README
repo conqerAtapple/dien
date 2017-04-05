@@ -1,0 +1,151 @@
+                                      dien
+                                      -----
+1. What
+----
+  `dien` is a lightweight library that provides c++ implementation for concepts 
+  like `promise`, `future`, `try`, `option`. These concepts are available (or 
+  are partially available in C++11). A lot of these constructs will start 
+  appearing in c++17 implementations.
+
+
+2. Why
+-----
+  c++11 introduced `promise` and `future` but the implementation is incomplete 
+  due to lack of `continuation`s. Also, the standard C++11 implementations is
+  'exception based'. For an error based system, the stadard C++11 implementation
+  would not work. Hence the need for a custom implementation.
+
+
+3. Concepts
+-----------
+  Asynchronous programming is hard and modern functional concepts like `promise`
+  and `future` are an improvement over old `callback` mechanisms. Although the
+  internal implementations of these constructs looks very much like callback
+  patterns but the complexity is hidden from the client(user of the library).
+
+  All async mechanisms need a channel for communcation between the `producer`
+  and `consumer` threads.  `promise` and `future` provide the client with this 
+  channel. The client is hidden from the complexities of how the channel works.
+
+  `promise` and `future` improves upon the conventional callback mechanisms by
+  providing a framework for chaining multiple asynchronous calls via 
+  `continuations`. 
+
+3.1 Promise
+-----------
+  A `promise` is the `producer` end of the asynchronous channel. It shares data
+  with `future`. When the producer thread is ready with the data, it `sets` the
+  data with a simple `set` method on it. There are almost no restrictions on
+  what type of data can be set by the producer.
+
+3.2 Future
+----------
+  A `future` is the `consumer` end of the asynchronous channel. The caller of an
+  asynchronous job/function does not expect the result of the function call
+  immediately. `future` encapsulates the idea that a result will be available
+  sometime in the future (when the producer thread is ready with the result). 
+
+3.3 Continuations
+------------
+  `continuation`s are what makes `promise` and `future` the most useful
+  construct in asyncronous programming. It allows the client of an asynchronous
+  function to execute blobs of functions in the context of the `promise` thread
+  (producer). These blobs could be set for `normal` and `error` events. 
+
+  Example:
+
+  A synchronous function:
+
+      int foo(const std::string&)
+
+  Client callsite would look like:
+
+  int caller()
+  {
+    int result = foo("test");
+    if (result == SUCCESS) {
+      // do something
+      return CLIENT_SUCCEEDED;
+    } 
+
+    // Do failure specific actions
+    return CLIENT_FAILED;
+  }
+
+  Asynchronous way : 
+  
+  Future<int> caller() 
+  {
+    return foo("test")
+        .Then([](int return_code) {
+          return CLIENT_SUCCEEDED;
+        }) 
+        .OnError([](Error &error) {
+          return CLIENT_FAILED;
+        }); 
+  }
+
+3.4 Try/Option
+--------------
+  TBD  
+
+
+4. Implementation
+---------
+  Implementation uses new C++11 features like variadic templates, template 
+  metaprogramming and universal references to realize the concepts.
+
+
+5. Testing
+---------
+  The code is accompanied by unit tests for each component.
+
+
+6. Coding style
+---------
+  - The coding style is based on Google's C++ style guide
+    (https://google.github.io/styleguide/cppguide.html).
+    with some minor modifications, notably:
+
+    1. kernel style 'struct' and 'class' declarations with curly braces on the
+    next line.
+    2 . Functions/methods has curly braces on the next line.
+
+  - Also part of the library is the '.clang-format' file that can be used with
+  clang-format tool for formattig the code.
+
+
+7. Installation and testing
+------------
+
+7.1 Required packages
+--------
+  - gcc 4.8+
+  - cmake
+  - glog-devel
+  - gflags-devel
+  - gtest-devel
+  - clang (for clang-format)
+
+7.2 Building tests
+--------
+  - cd tests/build
+  - ./build.sh
+ 
+7.3 Running tests
+-------
+  - Running all tests
+      ./dien_tests
+
+  - Running specific component tests
+    You can use the `--gtest_filter` flag for running the tests for specific
+    components. 
+    
+    Example:
+      ./dien_tests --gtest_filter="*Future*"
+
+
+8. TODO list
+-------
+  - Timer implementation for 'timeout' callbacks.
+
